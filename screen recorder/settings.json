@@ -1,0 +1,10 @@
+{
+    "fps": 60,
+    "quality": "High",
+    "format": "mp4",
+    "microphone": false,
+    "system_audio": true,
+    "output_folder": "Z:\\home\\ryan\\Downloads\\recordings",
+    "countdown": 3,
+    "hardware_encoder": true
+}
