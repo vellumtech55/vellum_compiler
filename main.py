@@ -1,15 +1,4 @@
-"""
-Vellum Video Converter
------------------------
-Standalone desktop video/audio format converter for Vellum Studio.
-Wraps ffmpeg/ffprobe (must be on PATH, or placed in a 'ffmpeg' folder
-next to this script/exe as ffmpeg.exe / ffprobe.exe).
 
-No paid APIs. No network calls. Pure local conversion.
-
-Build to .exe with:
-    pyinstaller --noconsole --onefile --name "Vellum Video Converter" vellum_video_converter.py
-"""
 
 import json
 import os
