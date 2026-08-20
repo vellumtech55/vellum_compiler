@@ -68,13 +68,6 @@ jobs:
             # Testing (optional, remove if not needed in the exe)
             pytest
 
-      # Optional: install from your own requirements.txt if present
-      - name: Install project requirements (if present)
-        run: |
-          if (Test-Path "requirements.txt") {
-            pip install -r requirements.txt
-          }
-        shell: pwsh
 
       - name: Find main.py and build EXE with PyInstaller
         shell: pwsh
