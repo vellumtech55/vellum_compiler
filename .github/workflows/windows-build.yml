@@ -76,17 +76,32 @@ jobs:
           }
         shell: pwsh
 
-      - name: Build EXE with PyInstaller
+      - name: Find main.py and build EXE with PyInstaller
+        shell: pwsh
         run: |
+          # Look for main.py in root first, then any immediate subfolder
+          if (Test-Path "main.py") {
+            $entrypoint = "main.py"
+            Write-Host "Found main.py in root"
+          } else {
+            $found = Get-ChildItem -Depth 1 -Filter "main.py" | Select-Object -First 1
+            if ($found) {
+              $entrypoint = $found.FullName
+              Write-Host "Found main.py at: $entrypoint"
+            } else {
+              Write-Error "Could not find main.py in root or any immediate subfolder."
+              exit 1
+            }
+          }
+
           pyinstaller `
             --onefile `
             --clean `
             --name "MyApp" `
             --hidden-import=pkg_resources.py2_warn `
-            main.py
-        # Change "main.py" to your entry-point script
-        # Add --noconsole if building a GUI app (no terminal window)
-        # Add --icon=app.ico to set a custom icon
+            $entrypoint
+          # Add --noconsole if building a GUI app (no terminal window)
+          # Add --icon=app.ico to set a custom icon
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
