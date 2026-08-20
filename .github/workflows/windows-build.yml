@@ -1,119 +1,105 @@
-name: Build Windows EXE
+name: Build Python EXE
+
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
-      - name: Checkout project
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
-        shell: powershell
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller pipreqs
 
-          if (Test-Path requirements.txt) {
-              Write-Host "Using existing requirements.txt"
-              pip install -r requirements.txt
-          } else {
-              Write-Host "No requirements.txt found - scanning source with pipreqs"
-              pipreqs . --force --savepath generated-requirements.txt
-              Write-Host "Detected packages:"
-              Get-Content generated-requirements.txt
-              pip install -r generated-requirements.txt
-          }
+          pip install `
+            # Packaging
+            pyinstaller `
+            # HTTP & Web
+            requests `
+            httpx `
+            aiohttp `
+            # Data & Science
+            numpy `
+            pandas `
+            scipy `
+            scikit-learn `
+            matplotlib `
+            seaborn `
+            # Database
+            sqlalchemy `
+            # Config & Environment
+            python-dotenv `
+            pydantic `
+            pydantic-settings `
+            # CLI
+            click `
+            rich `
+            typer `
+            # File Handling
+            openpyxl `
+            pillow `
+            PyPDF2 `
+            python-docx `
+            # Serialization
+            orjson `
+            pyyaml `
+            toml `
+            # Utilities
+            tqdm `
+            loguru `
+            tenacity `
+            schedule `
+            # Async
+            anyio `
+            # Testing (optional, remove if not needed in the exe)
+            pytest
 
-          # Safety net in case pipreqs misses dynamically-loaded packages
-          pip install customtkinter pillow keyboard pyautogui requests
-
-      - name: Find main.py
-        shell: powershell
+      # Optional: install from your own requirements.txt if present
+      - name: Install project requirements (if present)
         run: |
-          $main = Get-ChildItem -Recurse -Filter main.py | Select-Object -First 1
-          if ($null -eq $main) {
-              Write-Error "No main.py found!"
-              exit 1
+          if (Test-Path "requirements.txt") {
+            pip install -r requirements.txt
           }
-          echo "MAIN_FILE=$($main.FullName)" >> $env:GITHUB_ENV
-          Write-Host "Found: $($main.FullName)"
+        shell: pwsh
 
-      - name: Build EXE
-        shell: powershell
+      - name: Build EXE with PyInstaller
         run: |
-          $pyArgs = @("--onefile", "--windowed")
+          pyinstaller `
+            --onefile `
+            --clean `
+            --name "MyApp" `
+            --hidden-import=pkg_resources.py2_warn `
+            main.py
+        # Change "main.py" to your entry-point script
+        # Add --noconsole if building a GUI app (no terminal window)
+        # Add --icon=app.ico to set a custom icon
 
-          # Always collect these fully - they hide assets/binaries that
-          # PyInstaller's static analysis often misses (icons, DLLs, native backends)
-          $alwaysCollect = @("customtkinter", "PIL", "keyboard", "pyautogui")
-          foreach ($pkg in $alwaysCollect) {
-              $pyArgs += "--collect-all"
-              $pyArgs += $pkg
-          }
-
-          # Pick whichever requirements file exists and collect-all everything in it
-          $reqFile = if (Test-Path requirements.txt) { "requirements.txt" } else { "generated-requirements.txt" }
-
-          if (Test-Path $reqFile) {
-              Get-Content $reqFile | ForEach-Object {
-                  $line = $_.Trim()
-                  if ($line -and -not $line.StartsWith("#")) {
-                      # strip version specifiers like ==, >=, <=, ~=, !=
-                      $pkg = ($line -split "[=<>~!]")[0].Trim()
-                      if ($pkg -and ($alwaysCollect -notcontains $pkg)) {
-                          $pyArgs += "--collect-all"
-                          $pyArgs += $pkg
-                      }
-                  }
-              }
-          }
-
-          # Hidden imports for your own internal modules.
-          # NOTE: main.py -> app.py -> (main_window, settings, ffmpeg_manager,
-          # hotkeys) is a static import chain, so PyInstaller's analysis finds
-          # these automatically - no --hidden-import needed for them. Only add
-          # entries here for modules loaded dynamically (importlib, plugins).
-          $hiddenImports = @()
-          foreach ($mod in $hiddenImports) {
-              $pyArgs += "--hidden-import"
-              $pyArgs += $mod
-          }
-
-          $pyArgs += $env:MAIN_FILE
-
-          Write-Host "PyInstaller args:"
-          $pyArgs | ForEach-Object { Write-Host "  $_" }
-
-          # Use splatting (@pyArgs), NOT Invoke-Expression on a joined string -
-          # splatting preserves each argument exactly, including paths with spaces
-          & pyinstaller @pyArgs
-
-      - name: Bundle ffmpeg folder next to exe
-        shell: powershell
-        run: |
-          # config.py resolves FFMPEG_FOLDER as <exe_dir>/ffmpeg at runtime,
-          # so ffmpeg.exe needs to physically sit next to the built exe in
-          # dist/ - NOT embedded inside the onefile bundle, since that temp
-          # extraction folder is wiped after every run.
-          if (Test-Path "ffmpeg") {
-              Copy-Item -Recurse -Force "ffmpeg" "dist/ffmpeg"
-              Write-Host "Copied ffmpeg/ folder into dist/"
-          } else {
-              Write-Host "No ffmpeg/ folder found in repo - skipping (app will fall back to system PATH ffmpeg)"
-          }
-
-      - name: Upload EXE
+      - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Windows-EXE
-          path: dist/*
+          name: MyApp-windows-exe
+          path: dist/MyApp.exe
+          retention-days: 30
+
+      # Optional: create a GitHub Release on version tags
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/MyApp.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
