@@ -55,7 +55,8 @@ jobs:
             tenacity `
             schedule `
             anyio `
-            pytest
+            pytest `
+            mss
 
       - name: Install project requirements (if present)
         shell: pwsh
