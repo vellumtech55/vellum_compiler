@@ -36,7 +36,7 @@ class ScreenRecorder:
         self.timer_job = None
 
         # Get available monitors
-        with mss.mss() as sct:
+        with mss.MSS() as sct:
             self.monitors = sct.monitors[1:]  # skip "all monitors" entry
 
         self._build_ui()
@@ -139,9 +139,10 @@ class ScreenRecorder:
                               insertbackground=FG, relief="flat",
                               font=("Segoe UI", 8), width=18)
         path_entry.pack(side="left")
-        tk.Label(f3, text=" ⋯", fg=MUTED, bg=CARD, cursor="hand2",
-                 font=("Segoe UI", 11)).pack(side="left").bind(
-                     "<Button-1>", lambda e: self._browse())
+        browse_btn = tk.Label(f3, text=" ⋯", fg=MUTED, bg=CARD, cursor="hand2",
+                              font=("Segoe UI", 11))
+        browse_btn.pack(side="left")
+        browse_btn.bind("<Button-1>", lambda e: self._browse())
 
         # ── Controls ────────────────────────────────────────────────────────
         ctrl = tk.Frame(self.root, bg=BG)
@@ -225,7 +226,7 @@ class ScreenRecorder:
         if mon_idx < 0:
             mon_idx = 0
 
-        with mss.mss() as sct:
+        with mss.MSS() as sct:
             monitors = sct.monitors[1:]
             if not monitors:
                 messagebox.showerror("Error", "No monitors detected.")
@@ -274,7 +275,7 @@ class ScreenRecorder:
 
     def _record_loop(self, mon, fps):
         interval = 1.0 / fps
-        with mss.mss() as sct:
+        with mss.MSS() as sct:
             while self.recording:
                 t0 = time.perf_counter()
                 if not self.paused:
