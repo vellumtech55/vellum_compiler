@@ -22,64 +22,51 @@ jobs:
           cache: ""
 
       - name: Install dependencies
+        shell: pwsh
         run: |
           python -m pip install --upgrade pip
-
           pip install `
-            # Packaging
             pyinstaller `
-            # HTTP & Web
             requests `
             httpx `
             aiohttp `
-            # Data & Science
             numpy `
             pandas `
             scipy `
             scikit-learn `
             matplotlib `
             seaborn `
-            # Database
             sqlalchemy `
-            # Config & Environment
             python-dotenv `
             pydantic `
             pydantic-settings `
-            # CLI
             click `
             rich `
             typer `
-            # File Handling
             openpyxl `
             pillow `
             PyPDF2 `
             python-docx `
-            # Serialization
             orjson `
             pyyaml `
             toml `
-            # Utilities
             tqdm `
             loguru `
             tenacity `
             schedule `
-            # Async
             anyio `
-            # Testing (optional, remove if not needed in the exe)
             pytest
 
-      # Optional: install from your own requirements.txt if present
       - name: Install project requirements (if present)
+        shell: pwsh
         run: |
           if (Test-Path "requirements.txt") {
             pip install -r requirements.txt
           }
-        shell: pwsh
 
       - name: Find main.py and build EXE with PyInstaller
         shell: pwsh
         run: |
-          # Look for main.py in root first, then any immediate subfolder
           if (Test-Path "main.py") {
             $entrypoint = "main.py"
             Write-Host "Found main.py in root"
@@ -100,8 +87,6 @@ jobs:
             --name "MyApp" `
             --hidden-import=pkg_resources.py2_warn `
             $entrypoint
-          # Add --noconsole if building a GUI app (no terminal window)
-          # Add --icon=app.ico to set a custom icon
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
@@ -110,7 +95,6 @@ jobs:
           path: dist/MyApp.exe
           retention-days: 30
 
-      # Optional: create a GitHub Release on version tags
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
