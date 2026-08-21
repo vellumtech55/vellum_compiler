@@ -27,36 +27,30 @@ jobs:
           python -m pip install --upgrade pip
           pip install `
             pyinstaller `
+            mss `
+            opencv-python `
+            numpy `
+            pillow `
             requests `
             httpx `
             aiohttp `
-            numpy `
             pandas `
-            scipy `
-            scikit-learn `
-            matplotlib `
-            seaborn `
             sqlalchemy `
             python-dotenv `
             pydantic `
             pydantic-settings `
             click `
             rich `
-            typer `
             openpyxl `
-            pillow `
             PyPDF2 `
             python-docx `
-            orjson `
             pyyaml `
             toml `
             tqdm `
             loguru `
             tenacity `
             schedule `
-            anyio `
-            pytest `
-            mss
+            anyio
 
       - name: Install project requirements (if present)
         shell: pwsh
@@ -84,22 +78,26 @@ jobs:
 
           pyinstaller `
             --onefile `
+            --noconsole `
             --clean `
-            --name "MyApp" `
+            --name "ScreenRecorder" `
             --hidden-import=pkg_resources.py2_warn `
+            --hidden-import=cv2 `
+            --hidden-import=mss `
+            --hidden-import=mss.windows `
             $entrypoint
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MyApp-windows-exe
-          path: dist/MyApp.exe
+          name: ScreenRecorder-windows-exe
+          path: dist/ScreenRecorder.exe
           retention-days: 30
 
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/MyApp.exe
+          files: dist/ScreenRecorder.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
